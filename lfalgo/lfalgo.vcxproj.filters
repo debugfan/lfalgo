@@ -24,12 +24,42 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="lfdef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lflist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pattern_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wildmat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lflistmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lfalgo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lfdef.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lflist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern_list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wildmat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lflistmap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
