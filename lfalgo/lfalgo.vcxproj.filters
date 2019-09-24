@@ -39,6 +39,12 @@
     <ClInclude Include="lflistmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mem_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lfhashmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -60,6 +66,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lflistmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mem_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lfhashmap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

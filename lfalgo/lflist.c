@@ -113,6 +113,7 @@ BOOL lflist_add_internal(lflist_t *lst, lflist_entry_t *neo, lflist_entry_t **ad
     
     if(neo != NULL)
     {
+		InterlockedIncrement(&neo->ref_cnt);
         if(added_entry != NULL)
         {
             InterlockedIncrement(&neo->ref_cnt);
@@ -332,9 +333,9 @@ void lflist_release_entry(lflist_t *lst, lflist_entry_t *entry, lflist_free_entr
     }
 }
 
-lflist_link_t *lflist_mark_link(lflist_link_t *link)
+lflist_link_t *lflist_mark_link(lflist_link_t *link, long volatile * marked)
 {
-    lflist_link_t *next;
+    lflist_link_t *next, *neo;
     for(;;)
     {
         next = link->next;
@@ -344,9 +345,14 @@ lflist_link_t *lflist_mark_link(lflist_link_t *link)
         }
         else
         {
-            if(next == InterlockedCompareExchangePointer(&link->next, (void *)((uintptr_t)next | 1), next))
+			neo = (void *)((uintptr_t)next | 1);
+            if(next == InterlockedCompareExchangePointer(&link->next, neo, next))
             {
-                return (void *)((uintptr_t)next | 1);
+				if (marked != NULL)
+				{
+					InterlockedIncrement(marked);
+				}
+                return neo;
             }
             else
             {
@@ -356,7 +362,7 @@ lflist_link_t *lflist_mark_link(lflist_link_t *link)
     }
 }
 
-BOOL lflist_traverse(lflist_t *lst, lflist_traverse_callback_t callback, const void *in_data, void *out_data)
+BOOL lflist_traverse(lflist_t *lst, lflist_traverse_callback_t callback, void *in_data, void *out_data)
 {
     lflist_link_t * volatile prev;
     lflist_link_t * volatile cur;
@@ -511,11 +517,12 @@ lflist_entry_t *lflist_get_entry(lflist_t *lst, lflist_entry_cmp_func_t func, vo
     }
 }
 
-void lflist_remove_internal(lflist_t *lst, lflist_entry_cmp_func_t func, const void *condi, lflist_smear_func_t smear_func)
+int lflist_remove_internal(lflist_t *lst, lflist_entry_cmp_func_t func, const void *condi, lflist_smear_func_t smear_func)
 {
     lflist_link_t * volatile prev;
     lflist_link_t * volatile cur;
     lflist_link_t *cur_next = NULL;
+	long volatile marked = 0;
 
     InterlockedIncrement(&lst->ref_cnt);
     prev = &lst->list;
@@ -545,7 +552,7 @@ void lflist_remove_internal(lflist_t *lst, lflist_entry_cmp_func_t func, const v
                 {
 					smear_func(cur_entry, TRUE);
                 }
-                cur_next = lflist_mark_link(&cur_entry->link);
+                cur_next = lflist_mark_link(&cur_entry->link, &marked);
             }
             else if(r_cmp < 0)
             {
@@ -573,17 +580,20 @@ void lflist_remove_internal(lflist_t *lst, lflist_entry_cmp_func_t func, const v
         }
     }
     InterlockedDecrement(&lst->ref_cnt);
+	return marked;
 }
 
-void lflist_remove(lflist_t *lst, lflist_entry_cmp_func_t func, const void *condi, lflist_free_entry_func_t entry_free)
+int lflist_remove_entry(lflist_t *lst, lflist_entry_t *entry, lflist_smear_func_t smear_func)
 {
-    lflist_remove_internal(lst, func, condi, NULL);
-    lflist_collect_garbage(lst, FALSE, entry_free);
+    return lflist_remove_internal(lst, NULL, entry, smear_func);
 }
 
-void lflist_remove_entry(lflist_t *lst, lflist_entry_t *entry, lflist_smear_func_t smear_func)
+int lflist_remove(lflist_t *lst, lflist_entry_cmp_func_t func, const void *condi, lflist_free_entry_func_t entry_free)
 {
-    lflist_remove_internal(lst, NULL, entry, smear_func);
+	int r;
+	r = lflist_remove_internal(lst, func, condi, NULL);
+	lflist_collect_garbage(lst, FALSE, entry_free);
+	return r;
 }
 
 void lflist_close(lflist_t *lst)
@@ -612,7 +622,7 @@ lflist_entry_t *lflist_pop_entry(lflist_t *lst, lflist_smear_func_t smear_func)
 				smear_func(LFLIST_LINK_TO_ENTRY(cur), TRUE);
             }
             InterlockedExchangePointer(&cur->back_off, &lst->list);
-            cur_next = lflist_mark_link(cur);
+            cur_next = lflist_mark_link(cur, NULL);
         }
         
         if(((uintptr_t)cur_next & 1) != 0)

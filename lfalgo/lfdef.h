@@ -17,6 +17,7 @@ typedef _W64 unsigned int uintptr_t;
 #else
 #include <Windows.h>
 #include <stdint.h>
+#include <stdio.h>
 #endif
 #endif
 
@@ -80,6 +81,16 @@ static __inline long long InterlockedRead64(long long volatile *x)
 {
     return *x;
 }
+#endif
+
+#ifdef _DEBUG
+#ifdef _NTDDK_
+#define log_debugf(x) DbgPrint x
+#else
+#define log_debugf(x) printf x
+#endif
+#else
+#define log_debugf(x)
 #endif
 
 void revolve(int yield);

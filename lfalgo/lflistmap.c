@@ -4,7 +4,7 @@
 
 #define LFLISTMAP_LINK_TO_ENTRY(link) ((lflistmap_entry_t *) link)
 
-lflistmap_entry_t *lflistmap_alloc_entry(lflistmap_env_t *env, void *key, void *value, unsigned long tag)
+lflistmap_entry_t *lflistmap_alloc_entry(lflistmap_env_t *env, const void *key, void *value, unsigned long tag)
 {
 	if (env != NULL && env->alloc_entry != NULL)
 	{
@@ -155,7 +155,7 @@ BOOL lflistmap_insert_entry_internal(lflistmap_t *lmap, lflistmap_entry_t *neo, 
     }
 }
 
-BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap_entry_t **added_entry)
+BOOL lflistmap_add_internal(lflistmap_t *lmap, const void *key, void *value, lflistmap_entry_t **added_entry)
 {
     lflistmap_entry_t * neo;
     lflistmap_link_t * volatile prev;
@@ -166,6 +166,7 @@ BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap
     neo = lflistmap_alloc_entry(&lmap->env, key, value, lmap->tag);
     if(neo != NULL)
     {
+		InterlockedIncrement(&neo->ref_cnt);
         if(added_entry != NULL)
         {
             InterlockedIncrement(&neo->ref_cnt);
@@ -176,6 +177,8 @@ BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap
         {
             if(cur == NULL)
             {
+				log_debugf(("insert node %p after %p and before %p.\n", neo, prev, cur));
+
                 if(lflistmap_insert_entry_internal(lmap, neo, prev, cur))
                 {
                     if(added_entry != NULL)
@@ -197,7 +200,10 @@ BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap
             if(((uintptr_t)cur_next & 1) == 0)
             {
                 int r_cmp;
-                r_cmp = lflistmap_key_cmp(&lmap->env, lflistmap_get_key(&lmap->env, LFLISTMAP_LINK_TO_ENTRY(cur)), key);
+				void *cur_key;
+
+				cur_key = lflistmap_get_key(&lmap->env, LFLISTMAP_LINK_TO_ENTRY(cur));
+                r_cmp = lflistmap_key_cmp(&lmap->env, cur_key, key);
                 if(r_cmp < 0)
                 {
                     prev = cur;
@@ -249,6 +255,8 @@ BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap
                 }
                 else
                 {
+					log_debugf(("insert node %p after %p and before %p.\n", neo, prev, cur));
+
                     if(lflistmap_insert_entry_internal(lmap, neo, prev, cur))
                     {
                         if(added_entry != NULL)
@@ -282,7 +290,7 @@ BOOL lflistmap_add_internal(lflistmap_t *lmap, void *key, void *value, lflistmap
     return r;
 }
 
-BOOL lflistmap_add(lflistmap_t *lmap, void *key, void *value, lflistmap_entry_t **added_entry)
+BOOL lflistmap_add(lflistmap_t *lmap, const void *key, void *value, lflistmap_entry_t **added_entry)
 {
     BOOL r = FALSE;
   

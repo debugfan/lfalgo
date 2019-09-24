@@ -19,7 +19,7 @@ typedef struct _lflistmap_entry_t {
     long volatile ref_cnt;
 } lflistmap_entry_t;
 
-typedef lflistmap_entry_t *(*lflistmap_alloc_entry_func_t)(void *key, void *value, unsigned long tag);
+typedef lflistmap_entry_t *(*lflistmap_alloc_entry_func_t)(const void *key, void *value, unsigned long tag);
 typedef void (*lflistmap_free_entry_func_t)(lflistmap_entry_t *entry);
 
 typedef void *(*lflistmap_get_key_func_t)(lflistmap_entry_t *entry);
@@ -59,7 +59,7 @@ static __inline void *lflistmap_get_key(lflistmap_env_t *env, lflistmap_entry_t 
 
 void lflistmap_init(lflistmap_t *lmap, lflistmap_env_t *env, unsigned long tag);
 
-BOOL lflistmap_add(lflistmap_t *lmap, void *key, void *value, lflistmap_entry_t **added_entry);
+BOOL lflistmap_add(lflistmap_t *lmap, const void *key, void *value, lflistmap_entry_t **added_entry);
 void lflistmap_remove(lflistmap_t *lmap, const void *key);
 BOOL lflistmap_exists(lflistmap_t *lmap, const void *key);
 
