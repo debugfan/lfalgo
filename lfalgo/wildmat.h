@@ -6,7 +6,7 @@ extern  "C"
 {
 #endif
 
-int wildmat(const char *text, const char *p);
+int wildmat(const char *text, const char *p, int uppercase);
 
 #ifdef __cplusplus
 }

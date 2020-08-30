@@ -35,6 +35,11 @@
 **  released version unless you have a good test data base to try it out
 **  on.
 */
+#ifdef __KERNEL__
+#include <linux/ctype.h>
+#else
+#include <ctype.h>
+#endif
 
 #define TRUE			1
 #define FALSE			0
@@ -49,11 +54,13 @@
 #undef MATCH_TAR_PATTERN
 
 
+#define TO_UPPER(c, d) (d != 0 ? toupper(c) : c)
+
 /*
 **  Match text and p, return TRUE, FALSE, or ABORT.
 */
 static int
-DoMatch(register char	*text, register char	*p)
+DoMatch(register char	*text, register char	*p, int uppercase)
 {
     register int	last;
     register int	matched;
@@ -68,7 +75,7 @@ DoMatch(register char	*text, register char	*p)
 	    p++;
 	    /* FALLTHROUGH */
 	default:
-	    if (*text != *p)
+	    if (TO_UPPER(*text, uppercase) != *p)
 		return FALSE;
 	    continue;
 	case '?':
@@ -82,7 +89,7 @@ DoMatch(register char	*text, register char	*p)
 		/* Trailing star matches everything. */
 		return TRUE;
 	    while (*text)
-		if ((matched = DoMatch(text++, p)) != FALSE)
+		if ((matched = DoMatch(text++, p, uppercase)) != FALSE)
 		    return matched;
 	    return ABORT;
 	case '[':
@@ -92,12 +99,12 @@ DoMatch(register char	*text, register char	*p)
 		p++;
 	    matched = FALSE;
 	    if (p[1] == ']' || p[1] == '-')
-		if (*++p == *text)
+		if (*++p == TO_UPPER(*text, uppercase))
 		    matched = TRUE;
 	    for (last = *p; *++p && *p != ']'; last = *p)
 		/* This next line requires a good C compiler. */
 		if (*p == '-' && p[1] != ']'
-		    ? *text <= *++p && *text >= last : *text == *p)
+		    ? TO_UPPER(*text, uppercase) <= *++p && TO_UPPER(*text, uppercase) >= last : TO_UPPER(*text, uppercase) == *p)
 		    matched = TRUE;
 	    if (matched == reverse)
 		return FALSE;
@@ -117,13 +124,13 @@ DoMatch(register char	*text, register char	*p)
 **  User-level routine.  Returns TRUE or FALSE.
 */
 int
-wildmat(char *text, char *p)
+wildmat(char *text, char *p, int uppercase)
 {
 #ifdef	OPTIMIZE_JUST_STAR
     if (p[0] == '*' && p[1] == '\0')
 	return TRUE;
 #endif	/* OPTIMIZE_JUST_STAR */
-    return DoMatch(text, p) == TRUE;
+    return DoMatch(text, p, uppercase) == TRUE;
 }
 
 
